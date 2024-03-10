@@ -102,6 +102,7 @@ for zone in selected_zones:
             operation = service.instances().insert(project=project_id, zone=zone, body=config).execute()
             wait_for_operation_completion(service, project_id, zone, operation['name'])
             print(f"VM {vm_name} created successfully with {gpu_type} GPU")
+            vm_names.append((zone, vm_name))
             with open(log_file_path, 'a', newline='') as file:
                 writer = csv.writer(file)
                 writer.writerow([vm_name, zone, gpu_type, "Success"])
@@ -121,7 +122,9 @@ for zone in selected_zones:
 # Delete VMs
 for zone, vm_name in vm_names:
     try:
+        print(f"Deleting VM {vm_name} in zone {zone}...")
         response = service.instances().delete(project=project_id, zone=zone, instance=vm_name).execute()
-        print(f"{zone}: VM {vm_name} deletion initiated successfully")
+        wait_for_operation_completion(service, project_id, zone, response['name'])
+        print(f"{zone}: VM {vm_name} deleted successfully")
     except Exception as e:
         print(f"{zone}: Failed to delete VM {vm_name} - {str(e)}")
